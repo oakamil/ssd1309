@@ -43,8 +43,9 @@
 //! let display: GraphicsMode<_> = Builder::new().connect(interface).into();
 //! ```
 
+use core::convert::Infallible;
 use core::marker::PhantomData;
-use hal::{self, digital::v2::OutputPin};
+use embedded_hal::digital::{ErrorType, OutputPin, Error as DigitalError};
 
 use crate::{
     displayrotation::DisplayRotation,
@@ -106,7 +107,7 @@ impl Builder {
 
 /// Represents an unused output pin.
 #[derive(Clone, Copy)]
-pub struct NoOutputPin<PinE = ()> {
+pub struct NoOutputPin<PinE = Infallible> {
     _m: PhantomData<PinE>,
 }
 
@@ -117,12 +118,21 @@ impl<PinE> NoOutputPin<PinE> {
     }
 }
 
-impl<PinE> OutputPin for NoOutputPin<PinE> {
+impl<PinE> ErrorType for NoOutputPin<PinE>
+where
+    PinE: DigitalError,
+{
     type Error = PinE;
-    fn set_low(&mut self) -> Result<(), PinE> {
+}
+
+impl<PinE> OutputPin for NoOutputPin<PinE>
+where
+    PinE: DigitalError,
+{
+    fn set_low(&mut self) -> Result<(), Self::Error> {
         Ok(())
     }
-    fn set_high(&mut self) -> Result<(), PinE> {
+    fn set_high(&mut self) -> Result<(), Self::Error> {
         Ok(())
     }
 }
@@ -130,9 +140,16 @@ impl<PinE> OutputPin for NoOutputPin<PinE> {
 #[cfg(test)]
 mod tests {
     use super::NoOutputPin;
-    use embedded_hal::digital::v2::OutputPin;
+    use embedded_hal::digital::{OutputPin, ErrorKind, Error as DigitalError};
 
+    #[derive(Debug)]
     enum SomeError {}
+
+    impl DigitalError for SomeError {
+        fn kind(&self) -> ErrorKind {
+            match *self {}
+        }
+    }
 
     struct SomeDriver<P: OutputPin<Error = SomeError>> {
         #[allow(dead_code)]

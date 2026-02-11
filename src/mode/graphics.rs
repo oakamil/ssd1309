@@ -16,7 +16,8 @@
 //! ```
 
 use display_interface::{DisplayError, WriteOnlyDataCommand};
-use hal::{blocking::delay::DelayMs, digital::v2::OutputPin};
+use embedded_hal::delay::DelayNs;
+use embedded_hal::digital::OutputPin;
 
 use crate::{
     displayrotation::DisplayRotation,
@@ -65,14 +66,14 @@ where
     /// Reset display. This is very important on the SSD1309!
     ///
     /// This should be called before `init` or any other methods.
-    pub fn reset<RST, DELAY, PinE>(
+    pub fn reset<RST, DELAY>(
         &mut self,
         rst: &mut RST,
         delay: &mut DELAY,
-    ) -> Result<(), PinE>
+    ) -> Result<(), RST::Error>
     where
-        RST: OutputPin<Error = PinE>,
-        DELAY: DelayMs<u8>,
+        RST: OutputPin,
+        DELAY: DelayNs,
     {
         rst.set_high()?;
         delay.delay_ms(10);
