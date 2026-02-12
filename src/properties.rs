@@ -47,7 +47,6 @@ where
 
         self.set_rotation(display_rotation)?;
 
-        Command::DisplayOffset(0x1).send(&mut self.iface)?;
         Command::Contrast(0x6f).send(&mut self.iface)?;
         Command::PreChargePeriod(0x3, 0xd).send(&mut self.iface)?;
         Command::ScrollActive(false).send(&mut self.iface)?;
